@@ -14,10 +14,9 @@ window.ADS_CONFIG = {
   // CONFIGURAÇÃO MONETAG (Cole aqui os dados gerados no painel do Monetag):
   // =========================================================================
   monetag: {
-    // URL do script gerado pelo Monetag para a Zona 1 (ex: Vignette Banner / Interstitial / MultiTag)
-    // Exemplo: 'https://alwingulla.com/88/tag.min.js' ou a URL exata que o painel do Monetag fornecer
-    zone1ScriptUrl: '',
-    zone1Id: '',
+    // URL do script gerado pelo Monetag para a Zona 1 (MultiTag / Vignette / Interstitial)
+    zone1ScriptUrl: 'https://quge5.com/88/tag.min.js',
+    zone1Id: '312297',
 
     // URL do script da Zona 2 (opcional: se deixar vazio, reutiliza a Zona 1 no 2º anúncio)
     zone2ScriptUrl: '',

@@ -127,13 +127,13 @@ Este documento registra toda a arquitetura, regras de jogo, mecânicas de furtiv
 ---
 
 ## 7. Como Executar e Publicar o Projeto
-- **URL Pública na Nuvem (Fly.io — Região `gru` São Paulo):**
-  - Link ao vivo: `https://stick-pique-esconde.fly.dev/`
-  - Máquina única (`shared-cpu-1x:256MB`) com `auto_stop_machines = "stop"` e `min_machines_running = 0` (hiberna sozinha quando sem jogadores para não gerar custos).
-  - Para atualizar o servidor na nuvem após futuras alterações:
-    ```powershell
-    & "C:\Users\luiz_\.fly\bin\flyctl.exe" deploy --ha=false
-    ```
+- **URL Pública na Nuvem (Render.com — Plano Free sem cartão, deploy automático via GitHub):**
+  - Link ao vivo: `https://stick-pique-esconde.onrender.com/`
+  - Repositório GitHub: `https://github.com/overfilla/stick-pique-esconde.git` (`branch main`)
+  - Configuração de serviço em `render.yaml` (`node server.js`, WebSocket + HTTP, auto-deploy ativo a cada `git push origin main`).
+- **Monetização (Monetag):**
+  - Verificado via `sw.js` na raiz do projeto.
+  - MultiTag oficial configurada no `<head>` do `index.html` e no `js/ads.js` (`https://quge5.com/88/tag.min.js`, `data-zone="312297"`).
 - **Localmente com Multiplayer (Mini-Servidores WebSocket + HTTP na porta 8080):**
   ```powershell
   node "D:\Stick Pique Esconde\server.js"
@@ -159,20 +159,14 @@ Este documento registra toda a arquitetura, regras de jogo, mecânicas de furtiv
 
 ---
 
-## 9. Próximos Passos Pendentes para a Próxima Sessão ("O que temos para hoje?")
+## 9. Histórico da Migração para Render.com + Monetag (Concluída em 18/11/2026)
 
-Quando o usuário perguntar **"O que temos para hoje?"**, apresentar e executar estes **3 itens prioritários** (registrados em 17/11/2026):
-
-1. **Alternativa ao GameMonetize para jogo feito por IA:**
-   - *Contexto:* A GameMonetize recusou o jogo por ter sido feito por IA.
-   - *Objetivo:* Avaliar, escolher e integrar no `js/ads.js` uma rede de monetização compatível com jogos HTML5 desenvolvidos com auxílio de IA (ex: Playgama, Yandex Games, Google AdSense / H5 Games Ads, Monetag/Adsterra ou outra rede viável), garantindo que os 2 anúncios reais toquem corretamente ao fim de cada partida.
-2. **Confirmação sobre dados para pagamento e segurança na Fly.dev (`fly.io`):**
-   - *Contexto:* `https://stick-pique-esconde.fly.dev/` saiu do ar porque o período de teste (*trial* gratuito sem cartão) do Fly.io expirou (`trial has ended, please add a credit card by visiting https://fly.io/trial`).
-   - *Objetivo:* Confirmar a segurança de cadastrar dados de pagamento na Fly.io, explicar exatamente como funcionam cobranças, faturas baixas e limites de gasto na plataforma, e comparar com a alternativa gratuita sem cartão (**Render.com** com Node.js + WebSocket) para decidir onde reativar o servidor online.
-3. **Corrigir o que já levantamos:**
-   - Recolocar o servidor online no ar (Fly.io reativado ou Render.com configurado).
-   - Garantir que os anúncios reais da nova rede escolhida toquem de fato no link online (e ajustar o comportamento local).
-   - Validar/corrigir definitivamente o comportamento de não pausar ao dar `Alt + Tab` ou trocar de guia no modo Online (mantendo a pausa apenas no modo Solo Local) e remover marcas de "protótipo" (ex: selo `PROTÓTIPO 3D TOP-DOWN` no `index.html`) caso necessário para aprovação em redes de anúncios.
+1. ✅ **Alternativa ao GameMonetize para jogo feito por IA:**
+   - Migrado para **Monetag** (`sw.js` verificado + MultiTag `data-zone="312297"` integrada em `index.html` e `js/ads.js`), removendo completamente os scripts da GameMonetize.
+2. ✅ **Hospedagem Gratuita sem Cartão (Render.com):**
+   - Migrado da Fly.io para o **Render.com** (`https://stick-pique-esconde.onrender.com/`) com deploy automático via GitHub (`https://github.com/overfilla/stick-pique-esconde.git`).
+3. ✅ **Ajustes Gerais:**
+   - WebSocket em `js/game.js` agora usa `${wsProto}//${window.location.host}/ws` dinamicamente, `server.js` serve `.txt` e `sw.js`, selo do menu atualizado para `ARENA 3D MULTIPLAYER` e loop de segundo plano Web Worker ativo no modo Online.
 
 
 

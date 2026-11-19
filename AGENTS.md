@@ -30,14 +30,9 @@ Sempre que trabalhar neste repositório (`D:\Stick Pique Esconde`), leia primeir
    - Manter o botão de **Tela Cheia (`⛶ Tela Cheia`)** no canto superior direito tanto do menu inicial (`#btn-fullscreen-menu`) quanto do HUD de jogo (`#btn-fullscreen`).
    - Permitir **soltar/cancelar antecipadamente** `Dragon Flag (1)`, `Tinta Fresca 2D (2)` e `Espacate Alto (3)` a qualquer momento ao se mover (`WASD`/Setas), apertar `ESPAÇO` ou pressionar novamente a tecla da habilidade (`releaseHoldPose`).
    - Sempre rodar o servidor com `node server.js` (porta `8080`) para manter ativos os **4 Mini-Servidores WebSocket com preenchimento de IA (AI Backfill)**.
-   - **Deploy na Nuvem (Fly.io):** O projeto está publicado em `https://stick-pique-esconde.fly.dev/` (app `stick-pique-esconde`, região `gru` São Paulo, máquina única). Sempre que o usuário pedir para atualizar a versão online, basta executar `& "C:\Users\luiz_\.fly\bin\flyctl.exe" deploy --ha=false`.
-7. **Monetização (2 Anúncios por Partida — Online e Offline):**
-   - Ao final de toda partida (`endMatch`), exibir o placar por `3.5s` e entrar automaticamente no intervalo comercial de **2 anúncios obrigatórios (`Anúncio 1 de 2` ➔ `Anúncio 2 de 2`)** gerenciado por `js/ads.js` (`window.adManager`), iniciando a próxima partida automaticamente para todos ao concluir o 2º anúncio.
-8. **Tarefas Pendentes para a Próxima Sessão ("O que temos para hoje?"):**
-   - Sempre que o usuário perguntar **"O que temos para hoje?"**, ler a **Seção 9 de [MEMORIA_DO_PROJETO.md](file:///D:/Stick%20Pique%20Esconde/MEMORIA_DO_PROJETO.md)** e apresentar/executar os **3 próximos passos** registrados pelo usuário:
-     1. **Alternativa ao GameMonetize para jogo feito por IA** (GameMonetize recusou o jogo por ser feito por IA — escolher e integrar uma nova rede de anúncios compatível).
-     2. **Confirmação sobre dados para pagamento e segurança na Fly.dev (`fly.io`)** (o trial expirou e tirou `stick-pique-esconde.fly.dev` do ar — confirmar segurança/custos do Fly.io vs migrar para Render.com grátis sem cartão).
-     3. **Corrigir o que já levantamos** (recolocar o servidor online no ar, fazer os anúncios reais da nova rede tocarem corretamente e validar a correção de não pausar no `Alt + Tab` / troca de guia no modo Online).
+   - **Deploy na Nuvem (Render.com via GitHub):** O projeto está publicado em `https://stick-pique-esconde.onrender.com/` conectado a `https://github.com/overfilla/stick-pique-esconde.git` (`branch main`). Sempre que o usuário pedir para atualizar a versão online, basta fazer commit e executar `git push origin main` (o Render faz auto-deploy).
+7. **Monetização (Monetag — Zone 312297):**
+   - Ao final de toda partida (`endMatch`), exibir o placar por `3.5s` e entrar automaticamente no intervalo comercial de **2 anúncios (`Anúncio 1 de 2` ➔ `Anúncio 2 de 2`)** gerenciado por `js/ads.js` (`window.adManager`) integrado ao **Monetag** (`sw.js` na raiz + MultiTag `https://quge5.com/88/tag.min.js` `data-zone="312297"`), iniciando a próxima partida automaticamente para todos ao concluir o 2º anúncio.
 
 
 
