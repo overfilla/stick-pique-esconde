@@ -112,6 +112,7 @@ class StickHideAndSeekGame {
     this.matchTimer = 90.0; // 90s total: 0-30s (Tudo Trancado), 30-60s (Salva-Todos Aberto), 60-90s (Pique Aberto)
     this.salvaTodosUnlockTime = 60.0; // Unlocks after 30s elapsed (when matchTimer <= 60s)
     this.salvaTodosUnlocked = false;
+    this.salvaTodosCooldown = 0; // Intervalo mínimo de 10s entre cada Salva-Todos
     this.shortCircuitTimer = 0; // > 0 when Seeker's Curto-Circuito (5) is blocking Salva-Todos
     this.piqueUnlockTime = 30.0;
     this.piqueUnlocked = false;
@@ -640,6 +641,9 @@ class StickHideAndSeekGame {
       if (typeof msg.shortCircuitTimer === 'number') {
         this.shortCircuitTimer = msg.shortCircuitTimer;
       }
+      if (typeof msg.salvaTodosCooldown === 'number') {
+        this.salvaTodosCooldown = msg.salvaTodosCooldown;
+      }
       if (typeof msg.campTimer === 'number') this.campTimer = msg.campTimer;
       this.campingZone = msg.campingZone || null;
 
@@ -854,6 +858,7 @@ class StickHideAndSeekGame {
     this.matchTimer = 90.0; // 0-30s: Tudo Trancado | 30-60s: Salva-Todos Aberto | 60-90s: Pique Aberto
     this.salvaTodosUnlockTime = 60.0;
     this.salvaTodosUnlocked = false;
+    this.salvaTodosCooldown = 0;
     this.shortCircuitTimer = 0;
     this.piqueUnlockTime = 30.0;
     this.piqueUnlocked = false;
@@ -1140,6 +1145,8 @@ class StickHideAndSeekGame {
           this.showBigAlert(`🔒 Salva-Todos bloqueado nos 30s iniciais (faltam ${left}s)!`, 1.6);
         } else if (this.shortCircuitTimer > 0) {
           this.showBigAlert(`⚡ CURTO-CIRCUITO! Botão travado por mais ${this.shortCircuitTimer.toFixed(1)}s!`, 1.6);
+        } else if (this.salvaTodosCooldown > 0) {
+          this.showBigAlert(`⏳ Salva-Todos em recarga! Aguarde ${Math.ceil(this.salvaTodosCooldown)}s!`, 1.6);
         } else if (jailedCount > 0) {
           this.triggerPrisonRescue(this.player);
         } else {
@@ -1175,10 +1182,16 @@ class StickHideAndSeekGame {
   // Triggered at the Northern Jail Rescue Switch (or automatically if Seeker camps the Jail!)
   triggerPrisonRescue(rescuer = null, isAntiCampAuto = false, fromNet = false) {
     if (this.matchState !== 'hunt') return;
-    if (!fromNet && (!this.salvaTodosUnlocked || this.shortCircuitTimer > 0)) return;
+    if (!fromNet && !isAntiCampAuto && (!this.salvaTodosUnlocked || this.shortCircuitTimer > 0 || this.salvaTodosCooldown > 0)) return;
 
     const jailedHiders = this.hiders.filter((h) => h.state === 'jailed');
     if (jailedHiders.length === 0) return;
+
+    // Intervalo mínimo de 10 segundos entre cada Salva-Todos
+    this.salvaTodosCooldown = 10.0;
+    if (this.shortCircuitTimer <= 0) {
+      this.arena.setJailSwitchState('locked');
+    }
 
     if (!fromNet && this.isMultiplayer && this.wsConnected) {
       this.sendNetMessage({
@@ -1238,7 +1251,7 @@ class StickHideAndSeekGame {
     hider.position.set(-2.0 + savedCount * 1.1, 0, -0.5);
     this.stats.piqueSaves++;
     window.soundFX.playSingleSave();
-    this.showBigAlert(`⭐ BATEU PIQUE! ${hider.name} está salvo!`, 2.4);
+    this.showBigAlert(`⭐ BATEU PIQUE! ${hider.name} está salvo! (${savedCount}/3 para vitória)`, 2.4);
     this.checkWinConditions();
   }
 
@@ -1265,8 +1278,8 @@ class StickHideAndSeekGame {
     const distToPique = this.seeker.position.distanceTo(this.arena.piquePos);
     const campRadius = 6.5;
 
-    // Prison anti-camp ONLY applies if Salva-Todos is unlocked AND not short-circuited!
-    const jailRescueActive = this.salvaTodosUnlocked && this.shortCircuitTimer <= 0;
+    // Prison anti-camp ONLY applies if Salva-Todos is unlocked, not short-circuited, and not on 10s cooldown!
+    const jailRescueActive = this.salvaTodosUnlocked && this.shortCircuitTimer <= 0 && this.salvaTodosCooldown <= 0;
 
     let currentZone = null;
     if (!chasingVisibleHider && this.seeker.stunTimer <= 0) {
@@ -1362,22 +1375,26 @@ class StickHideAndSeekGame {
 
     const freeCount = this.hiders.filter((h) => h.state === 'free').length;
     const savedCount = this.hiders.filter((h) => h.state === 'saved').length;
-    const jailedCount = this.hiders.filter((h) => h.state === 'jailed').length;
 
+    // Regra: O Pegador perde imediatamente se pelo menos 3 dos 4 Escondidos estiverem no Pique
+    if (savedCount >= 3) {
+      this.endMatch(
+        true,
+        'Vitória dos Escondidos!',
+        `${savedCount} de 4 bonecos bateram no Pique e derrotaram o Pegador!`
+      );
+      return;
+    }
+
+    // Se não há mais nenhum escondido solto (freeCount === 0) e menos de 3 chegaram ao Pique, o Pegador vence!
     if (freeCount === 0) {
-      if (savedCount > 0) {
-        this.endMatch(
-          true,
-          'Vitória dos Escondidos!',
-          `${savedCount} boneco(s) bateram no Pique e escaparam do Pegador!`
-        );
-      } else if (jailedCount === this.hiders.length) {
-        this.endMatch(
-          false,
-          'Vitória do Pegador!',
-          'Todos os bonecos palito foram capturados e trancados na prisão!'
-        );
-      }
+      this.endMatch(
+        false,
+        'Vitória do Pegador!',
+        savedCount > 0
+          ? `Apenas ${savedCount}/3 chegaram ao Pique e todos os demais foram capturados!`
+          : 'Todos os bonecos palito foram capturados e trancados na prisão!'
+      );
     }
   }
 
@@ -1837,7 +1854,7 @@ class StickHideAndSeekGame {
       if (this.matchState === 'hunt' && !isCurrentlyDetected) {
         const seekerDistToJail = this.seeker.position.distanceTo(this.arena.jailPos);
         const seekerDistToPique = this.seeker.position.distanceTo(this.arena.piquePos);
-        const canRescueNow = this.salvaTodosUnlocked && this.shortCircuitTimer <= 0;
+        const canRescueNow = this.salvaTodosUnlocked && this.shortCircuitTimer <= 0 && this.salvaTodosCooldown <= 0;
 
         // 1. If allies are locked in the North Prison, Salva-Todos is unlocked & not short-circuited, go rescue!
         if (jailedCount > 0 && canRescueNow && seekerDistToJail > 6.5) {
@@ -2097,6 +2114,7 @@ class StickHideAndSeekGame {
         countdownTimer: Number(this.countdownTimer.toFixed(2)),
         matchTimer: Number(this.matchTimer.toFixed(2)),
         salvaTodosUnlocked: this.salvaTodosUnlocked,
+        salvaTodosCooldown: Number(this.salvaTodosCooldown.toFixed(2)),
         piqueUnlocked: this.piqueUnlocked,
         shortCircuitTimer: Number(this.shortCircuitTimer.toFixed(2)),
         campTimer: Number(this.campTimer.toFixed(2)),
@@ -2588,9 +2606,9 @@ class StickHideAndSeekGame {
         this.player.state === 'free' &&
         this.player.position.distanceTo(this.arena.piquePos) <= this.arena.piqueRadius + 0.95
       ) {
-        this.piqueLabelEl.textContent = '⭐ APERTE [ESPAÇO]: BATER PIQUE!';
+        this.piqueLabelEl.textContent = `⭐ APERTE [ESPAÇO]: BATER PIQUE! (${savedCount}/3)`;
       } else {
-        this.piqueLabelEl.textContent = '🔓 O PIQUE ABERTO! (BATA PIQUE)';
+        this.piqueLabelEl.textContent = `🔓 O PIQUE ABERTO! (${savedCount}/3 P/ VENCER)`;
       }
     }
 
@@ -2600,6 +2618,8 @@ class StickHideAndSeekGame {
       } else if (!this.salvaTodosUnlocked) {
         const stIn = Math.max(1, Math.ceil(this.matchTimer - this.salvaTodosUnlockTime));
         this.jailLabelEl.textContent = `🔒 PRISÃO (SALVA-TODOS LIBERA EM ${stIn}s)`;
+      } else if (this.salvaTodosCooldown > 0) {
+        this.jailLabelEl.textContent = `⏳ PRISÃO (SALVA-TODOS EM RECARGA: ${Math.ceil(this.salvaTodosCooldown)}s)`;
       } else if (jailedNow > 0) {
         if (
           this.player &&
@@ -2663,8 +2683,18 @@ class StickHideAndSeekGame {
       if (this.shortCircuitTimer > 0) {
         this.shortCircuitTimer = Math.max(0, this.shortCircuitTimer - dt);
         if (this.shortCircuitTimer <= 0) {
-          this.arena.setJailSwitchState(this.salvaTodosUnlocked ? 'ready' : 'locked');
+          this.arena.setJailSwitchState(
+            this.salvaTodosUnlocked && this.salvaTodosCooldown <= 0 ? 'ready' : 'locked'
+          );
           this.showBigAlert('🔓 Fim do Curto-Circuito! Botão Salva-Todos voltou a funcionar!', 2.2);
+        }
+      }
+
+      // Tick global 10s cooldown between Salva-Todos rescues
+      if (this.salvaTodosCooldown > 0) {
+        this.salvaTodosCooldown = Math.max(0, this.salvaTodosCooldown - dt);
+        if (this.salvaTodosCooldown <= 0 && this.salvaTodosUnlocked && this.shortCircuitTimer <= 0) {
+          this.arena.setJailSwitchState('ready');
         }
       }
 
@@ -2700,15 +2730,24 @@ class StickHideAndSeekGame {
       this.updateNoiseAndTremors(dt);
 
       if ((!this.isMultiplayer || this.isRoomHost) && this.matchTimer <= 0) {
-        const survivors = this.hiders.filter((h) => h.state === 'free' || h.state === 'saved').length;
-        if (survivors > 0) {
+        const freeCount = this.hiders.filter((h) => h.state === 'free').length;
+        const savedCount = this.hiders.filter((h) => h.state === 'saved').length;
+        if (freeCount > 0 || savedCount >= 3) {
           this.endMatch(
             true,
             'Tempo Esgotado! Escondidos Vencem!',
-            `${survivors} boneco(s) palito sobreviveram sem ficar presos!`
+            freeCount > 0
+              ? `${freeCount} boneco(s) palito terminaram soltos na arena!`
+              : `${savedCount} de 4 bonecos bateram no Pique!`
           );
         } else {
-          this.endMatch(false, 'Vitória do Pegador!', 'Nenhum escondido escapou a tempo!');
+          this.endMatch(
+            false,
+            'Vitória do Pegador!',
+            savedCount > 0
+              ? `Apenas ${savedCount}/3 chegaram ao Pique e nenhum escondido ficou solto!`
+              : 'Nenhum escondido escapou a tempo!'
+          );
         }
       }
     }

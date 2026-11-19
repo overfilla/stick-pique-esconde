@@ -18,11 +18,11 @@ Sempre que trabalhar neste repositório (`D:\Stick Pique Esconde`), leia primeir
 3. **IA Justa e Pathfinding A\*:**
    - Todos os bots usam a malha de navegação A\* (`ArenaMap.findPath` + `followNavPath`) em `js/map.js` e `js/game.js`.
    - A IA do Pegador **nunca** deve trapacear lendo coordenadas ou posturas invisíveis dos Escondidos; quando um Escondido ativa uma habilidade furtiva fora do counter ativo, o Pegador perde o rastro imediatamente.
-4. **Ritmo em 3 Atos (90s) e Anti-"Guarda-Caixão":**
+4. **Ritmo em 3 Atos (90s), Condição de Vitória e Anti-"Guarda-Caixão":**
    - **0s–30s:** Tudo trancado (Pique e Salva-Todos bloqueados).
-   - **30s–60s:** Botão **Salva-Todos** abre na Prisão ao Norte (`z = -16.8`). O Pegador pode usar **`5: Curto-Circuito`** (1x na partida, 15s de bloqueio).
-   - **60s–90s (Últimos 30s):** **O Pique Central** `(0, 0)` abre para vitória dos Escondidos.
-   - A penalidade de **Guardar Caixão** na Prisão fica **suspensa** nos primeiros 30s e durante os 15s do **Curto-Circuito**.
+   - **30s–60s:** Botão **Salva-Todos** abre na Prisão ao Norte (`z = -16.8`) com **intervalo mínimo de 10 segundos** de recarga (`salvaTodosCooldown = 10.0`) entre cada resgate. O Pegador pode usar **`5: Curto-Circuito`** (1x na partida, 15s de bloqueio).
+   - **60s–90s (Últimos 30s):** **O Pique Central** `(0, 0)` abre. O Pegador perde se **pelo menos 3 dos 4 Escondidos** baterem no Pique **ou** se o tempo acabar com jogadores ainda soltos (`freeCount > 0`); apenas 1 ou 2 no Pique não garantem a vitória dos Escondidos.
+   - A penalidade de **Guardar Caixão** na Prisão fica **suspensa** nos primeiros 30s, durante os 15s do **Curto-Circuito** e durante a recarga de 10s do **Salva-Todos**.
 5. **Estética e Iluminação Gótica (Inspirada em *Diablo IV* e *Utevo Gran Lux* do *Tibia*):**
    - Preservar as texturas PBR procedurais (`generateDiabloTextures` com `bumpMap` em `js/map.js`), o mapeamento UV em escala de mundo (`scaleBoxUVs`) para evitar estiramento de tijolos, os 8 braseiros de fogo vivo sem sombras pesadas (60 FPS) e a aplicação da textura da parede (`window.gothicWallColorTex`) no boneco durante a *Tinta Fresca 2D*.
    - A iluminação do Pegador deve usar luzes 3D reais (`seekerSpotLight` com sombra e penumbra suave para o feixe da lanterna + `seekerGranLuxLight` explodindo em 360° dourado-solar na habilidade `1: Acender a Luz`) combinadas com a malha multi-anel em `THREE.AdditiveBlending` (`visionRings = 5`) que decai até `0` nas bordas (nunca usar um polígono chapado de cor uniforme).
