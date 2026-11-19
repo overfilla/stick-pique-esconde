@@ -205,6 +205,31 @@
     </div>
   </div>
 
+  <!-- AdBlock Detection Modal -->
+  <div id="adblock-modal" class="modal-overlay adblock-overlay hidden">
+    <div class="modal-card adblock-card">
+      <div class="adblock-icon">🛡️</div>
+      <div class="modal-badge adblock-badge">BLOQUEADOR DE ANÚNCIOS DETECTADO</div>
+      <h2>Desative o AdBlock para jogar!</h2>
+      <p class="modal-subtitle">
+        <strong>Stick Pique-Esconde 3D</strong> é 100% gratuito e <strong>não usa pop-ups</strong> durante a partida.
+        Exibimos apenas 2 banners rápidos ao fim de cada rodada para manter os servidores multiplayer online.
+      </p>
+
+      <ol class="adblock-steps">
+        <li>Clique no ícone do seu bloqueador (uBlock, AdBlock, Brave Shields, etc.) na barra do navegador.</li>
+        <li>Selecione <strong>Pausar / Desativar neste site</strong> (<code>stick-pique-esconde.onrender.com</code>).</li>
+        <li>Clique no botão abaixo para continuar jogando normalmente.</li>
+      </ol>
+
+      <div id="adblock-status-msg" class="adblock-status-msg hidden"></div>
+
+      <div class="modal-actions">
+        <button id="btn-recheck-adblock" class="primary-cta">🔄 Já desativei — Verificar e Continuar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/audio.js"></script>
   <script src="js/ads.js"></script>
   <script src="js/stickman.js"></script>

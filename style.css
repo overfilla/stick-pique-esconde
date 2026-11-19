@@ -1050,6 +1050,64 @@ kbd {
   color: #93c5fd;
 }
 
+/* ==================== ADBLOCK DETECTION MODAL ==================== */
+.adblock-overlay {
+  z-index: 9999;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.98));
+}
+
+.adblock-card {
+  max-width: 560px;
+  border-color: rgba(244, 63, 94, 0.55);
+  box-shadow: 0 25px 70px rgba(244, 63, 94, 0.22);
+}
+
+.adblock-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.adblock-badge {
+  background: rgba(244, 63, 94, 0.18);
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #fda4af;
+}
+
+.adblock-steps {
+  text-align: left;
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  padding: 16px 20px 16px 36px;
+  margin: 14px 0 18px;
+  color: #e2e8f0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adblock-steps code {
+  background: rgba(30, 41, 59, 0.9);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 0.85rem;
+}
+
+.adblock-status-msg {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(244, 63, 94, 0.16);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  color: #fecdd3;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
 @media (max-width: 1024px) {
   #hud-bottom {
     grid-template-columns: 1fr;

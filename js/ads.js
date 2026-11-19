@@ -32,6 +32,7 @@ window.ADS_CONFIG = {
 class AdManager {
   constructor() {
     this.isPlayingAdBreak = false;
+    this.adBlockDetected = false;
     this.currentAdIndex = 0;
     this.totalAds = (window.ADS_CONFIG && window.ADS_CONFIG.adsPerMatch) || 2;
     this.returnToMenuAfterAds = false;
@@ -41,6 +42,123 @@ class AdManager {
     // Remove qualquer Service Worker residual de testes anteriores (ex: Monetag sw.js)
     // para garantir que nenhum pop-up ou push apareça durante o jogo.
     this.cleanupLegacyServiceWorkers();
+
+    // Inicia a verificação de AdBlock assim que o DOM estiver pronto
+    this.initAdBlockDetection();
+  }
+
+  initAdBlockDetection() {
+    const startCheck = () => {
+      const btn = document.getElementById('btn-recheck-adblock');
+      if (btn) {
+        btn.addEventListener('click', () => this.handleManualRecheck());
+      }
+      setTimeout(() => {
+        this.checkAndToggleAdBlockModal();
+      }, 650);
+    };
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', startCheck);
+    } else {
+      startCheck();
+    }
+  }
+
+  // Detecta AdBlock combinando elemento isca (cosmético) + teste de rede no script real do Adsterra
+  async detectAdBlock() {
+    if (!window.ADS_CONFIG || !window.ADS_CONFIG.enabled) return false;
+
+    // 1. Teste cosmético (Bait DOM Element)
+    let baitBlocked = false;
+    try {
+      const bait = document.createElement('div');
+      bait.className = 'adsbox ad-banner pub_300x250 pub_300x250m pub_728x90 text-ad textAd';
+      bait.style.cssText =
+        'position:absolute;left:-9999px;top:-9999px;width:300px;height:250px;pointer-events:none;';
+      bait.innerHTML = '&nbsp;';
+      document.body.appendChild(bait);
+
+      await new Promise((r) => setTimeout(r, 120));
+
+      const style = window.getComputedStyle(bait);
+      if (
+        !document.body.contains(bait) ||
+        bait.offsetHeight === 0 ||
+        bait.clientHeight === 0 ||
+        style.display === 'none' ||
+        style.visibility === 'hidden'
+      ) {
+        baitBlocked = true;
+      }
+      bait.remove();
+    } catch (e) {}
+
+    if (baitBlocked) return true;
+
+    // 2. Teste de rede (verifica se o bloqueador impediu o carregamento do script do Adsterra)
+    if (navigator.onLine !== false) {
+      const testUrl =
+        (window.ADS_CONFIG.adsterra &&
+          window.ADS_CONFIG.adsterra.ad1 &&
+          window.ADS_CONFIG.adsterra.ad1.scriptUrl) ||
+        'https://bauval.org/22/b2db0a752021cd91ed89ea4fe0f486ae';
+
+      try {
+        await fetch(testUrl, {
+          method: 'GET',
+          mode: 'no-cors',
+          cache: 'no-store'
+        });
+      } catch (err) {
+        // ERR_BLOCKED_BY_CLIENT rejeita a Promise mesmo com mode: 'no-cors'
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  async checkAndToggleAdBlockModal() {
+    const blocked = await this.detectAdBlock();
+    this.adBlockDetected = blocked;
+    const modal = document.getElementById('adblock-modal');
+    if (modal) {
+      modal.classList.toggle('hidden', !blocked);
+    }
+    return blocked;
+  }
+
+  async handleManualRecheck() {
+    const btn = document.getElementById('btn-recheck-adblock');
+    const msgEl = document.getElementById('adblock-status-msg');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Verificando...';
+    }
+    if (msgEl) msgEl.classList.add('hidden');
+
+    const stillBlocked = await this.checkAndToggleAdBlockModal();
+
+    if (stillBlocked) {
+      if (msgEl) {
+        msgEl.textContent =
+          '⚠️ O bloqueador de anúncios ainda está ativo. Desative-o para este site e clique novamente (ou recarregue a página com F5).';
+        msgEl.classList.remove('hidden');
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔄 Já desativei — Verificar e Continuar';
+      }
+    } else {
+      if (window.game) {
+        window.game.lastFrameTime = performance.now();
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔄 Já desativei — Verificar e Continuar';
+      }
+    }
   }
 
   cleanupLegacyServiceWorkers() {
@@ -53,10 +171,10 @@ class AdManager {
     } catch (e) {}
   }
 
-  // Retorna true enquanto o intervalo comercial estiver ativo.
+  // Retorna true enquanto o intervalo comercial ou o aviso de AdBlock estiver ativo.
   // Usado pelo game.js para congelar 100% da partida (cronômetro, contagem, IA e movimento).
   isAdActive() {
-    return !!this.isPlayingAdBreak;
+    return !!(this.isPlayingAdBreak || this.adBlockDetected);
   }
 
   // Executa a sequência obrigatória de 2 anúncios ao final da partida (Anúncio 1/2 -> Anúncio 2/2 -> fecha)
