@@ -33,6 +33,12 @@ Sempre que trabalhar neste repositório (`D:\Stick Pique Esconde`), leia primeir
    - **Deploy na Nuvem (Render.com via GitHub):** O projeto está publicado em `https://stick-pique-esconde.onrender.com/` conectado a `https://github.com/overfilla/stick-pique-esconde.git` (`branch main`). Sempre que o usuário pedir para atualizar a versão online, basta fazer commit e executar `git push origin main` (o Render faz auto-deploy).
 7. **Monetização (Adsterra — 2 Banners Limpos Controlados, ZERO Pop-up):**
    - Ao final de toda partida (`endMatch`), exibir o placar por `3.5s` e entrar automaticamente no intervalo comercial de **2 anúncios sequenciais (`Anúncio 1 de 2` ➔ `Anúncio 2 de 2`)** gerenciado por `js/ads.js` (`window.adManager`) usando **Adsterra** (`Banner 300x250` e `Banner 728x90` em `iframe` `srcdoc` dentro de `#intermission-stage-box`), fechando o modal automaticamente ao fim do 2º anúncio e iniciando a próxima partida.
+8. **Tarefas Pendentes para a Próxima Sessão ("O que há para hoje?" / "O que temos para hoje?"):**
+   - Sempre que o usuário perguntar **"O que há para hoje?"** ou **"O que temos para hoje?"**, ler a **Seção 10 de [MEMORIA_DO_PROJETO.md](file:///D:/Stick%20Pique%20Esconde/MEMORIA_DO_PROJETO.md)** e apresentar/executar estes **4 itens**:
+     1. **Divulgação do jogo:** Em quais plataformas divulgar um jogo criado por IA.
+     2. **Identidade autoral (não parecer feito por IA):** Como melhorar visual, UI, assets e apresentação para não ser detectado como criado por IA.
+     3. **Adicionar mais 2 ads no mesmo tempo** (podendo ser em tela cheia durante o intervalo comercial).
+     4. **Adicionar a logo `FillaDev`** em lugares estratégicos da página.
 
 
 

@@ -174,6 +174,17 @@ Este documento registra toda a arquitetura, regras de jogo, mecânicas de furtiv
    - Nova condição de vitória: Pegador perde se **pelo menos 3 dos 4 Escondidos** baterem no Pique **ou** se o tempo acabar com jogadores ainda soltos (`freeCount > 0`).
    - Novo intervalo mínimo de **10 segundos** (`salvaTodosCooldown = 10.0`) entre cada acionamento do **Salva-Todos**.
 
+---
+
+## 10. Próximos Passos Pendentes ("O que há para hoje?" / "O que temos para hoje?")
+
+Quando o usuário perguntar **"O que há para hoje?"** ou **"O que temos para hoje?"**, apresentar e executar estes **4 itens prioritários** (registrados em 18/11/2026):
+
+1. **Divulgação do jogo:** Levantar e listar em quais plataformas e comunidades é possível divulgar um jogo criado com auxílio de IA (portais indie, redes sociais, comunidades de jogos web, diretórios `.io`, etc.) e montar um plano prático de divulgação.
+2. **Como fazer com que o jogo não seja detectado / rotulado como criado por IA:** Avaliar e aplicar melhorias de identidade autoral, UI/UX (substituir excesso de emojis/padrões genéricos), arte de capa/assets, textos e polimento geral para ter aparência de estúdio indie humano.
+3. **Adicionar mais 2 ads no mesmo tempo (podendo ser em tela cheia):** Expandir o intervalo comercial em `js/ads.js` para exibir mais 2 anúncios simultaneamente no mesmo tempo do intervalo (podendo usar formatos maiores / tela cheia controlados no fim da partida, mantendo o gameplay limpo).
+4. **Adicionar a logo `FillaDev` em lugares estratégicos da página:** Inserir a identidade visual/logo **FillaDev** em pontos estratégicos (`index.html` / `style.css`: menu principal, rodapé/marca d'água discreta, tela de fim de partida e intervalo comercial).
+
 
 
 
