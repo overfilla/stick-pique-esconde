@@ -1,28 +1,31 @@
-// Sistema de Monetização — Monetag (2 Anúncios por Partida — Online e Offline)
-// Compatível com:
-// 1. Monetag Vignette Banner / Interstitial / MultiTag (scripts por Zona)
-// 2. Monetag Direct Link (SmartLink) opcional no intervalo comercial
+// Sistema de Monetização — Adsterra Banners Controlados (2 Anúncios por Partida — Online e Offline)
+// Fluxo exato:
+// 1. ZERO anúncios/pop-ups durante a partida.
+// 2. Fim de partida -> 3.5s de placar -> Modal de Intervalo Comercial:
+//    - Anúncio 1 de 2 (5s): Banner Adsterra 300x250 dentro da caixa central
+//    - Anúncio 2 de 2 (5s): Banner Adsterra 728x90 dentro da caixa central
+//    - Fecha automaticamente e inicia a próxima partida!
 
 window.ADS_CONFIG = {
   enabled: true,
-  adsPerMatch: 2,               // Quantidade obrigatória de anúncios ao fim de cada partida (Anúncio 1/2 e 2/2)
-  adDurationSeconds: 5,         // Duração mínima de exibição de cada etapa do intervalo comercial (segundos)
-  scoreboardDelaySeconds: 3.5,  // Tempo que o placar final aparece antes de iniciar o Anúncio 1/2
-  provider: 'monetag',
+  adsPerMatch: 2,               // 2 anúncios sequenciais obrigatórios ao fim de cada partida
+  adDurationSeconds: 5,         // 5 segundos por anúncio (Anúncio 1/2 -> Anúncio 2/2 -> fecha sozinho)
+  scoreboardDelaySeconds: 3.5,  // Tempo do placar final antes de abrir o Anúncio 1/2
+  provider: 'adsterra',
 
-  // =========================================================================
-  // CONFIGURAÇÃO MONETAG (Cole aqui os dados gerados no painel do Monetag):
-  // =========================================================================
-  monetag: {
-    // MultiTag removida para evitar Pop-up / OnClick / In-Page Push durante o jogo.
-    // Usar apenas zona controlada (ex: Banner Display / Direct Link) dentro do intervalo comercial.
-    zone1ScriptUrl: '',
-    zone1Id: '',
-
-    zone2ScriptUrl: '',
-    zone2Id: '',
-
-    directLinkUrl: ''
+  adsterra: {
+    ad1: {
+      key: 'b2db0a752021cd91ed89ea4fe0f486ae',
+      width: 300,
+      height: 250,
+      scriptUrl: 'https://bauval.org/22/b2db0a752021cd91ed89ea4fe0f486ae'
+    },
+    ad2: {
+      key: '9c614d5786045bfaefeae3f138cfa684',
+      width: 728,
+      height: 90,
+      scriptUrl: 'https://bauval.org/22/9c614d5786045bfaefeae3f138cfa684'
+    }
   }
 };
 
@@ -34,7 +37,20 @@ class AdManager {
     this.returnToMenuAfterAds = false;
     this.wasSoundEnabled = true;
     this.activeTimer = null;
-    this.injectedScripts = [];
+
+    // Remove qualquer Service Worker residual de testes anteriores (ex: Monetag sw.js)
+    // para garantir que nenhum pop-up ou push apareça durante o jogo.
+    this.cleanupLegacyServiceWorkers();
+  }
+
+  cleanupLegacyServiceWorkers() {
+    try {
+      if ('serviceWorker' in navigator && typeof navigator.serviceWorker.getRegistrations === 'function') {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((reg) => reg.unregister().catch(() => {}));
+        }).catch(() => {});
+      }
+    } catch (e) {}
   }
 
   // Retorna true enquanto o intervalo comercial estiver ativo.
@@ -43,52 +59,7 @@ class AdManager {
     return !!this.isPlayingAdBreak;
   }
 
-  // Injeta o script de Zona do Monetag apenas se ainda NÃO estiver carregado na página
-  // (evita empilhar múltiplas instâncias da MultiTag que travam o botão de fechar!)
-  triggerMonetagZone(adNumber) {
-    const cfg = window.ADS_CONFIG && window.ADS_CONFIG.monetag;
-    if (!cfg) return false;
-
-    const isSecond = adNumber === 2;
-    const scriptUrl = (isSecond && cfg.zone2ScriptUrl) ? cfg.zone2ScriptUrl : cfg.zone1ScriptUrl;
-    const zoneId = (isSecond && cfg.zone2Id) ? cfg.zone2Id : cfg.zone1Id;
-
-    // 1. Se o Monetag expor função programática show_<ZONE_ID>(), aciona diretamente
-    if (zoneId && typeof window[`show_${zoneId}`] === 'function') {
-      try {
-        window[`show_${zoneId}`]();
-        return true;
-      } catch (e) {}
-    }
-
-    // 2. Se a MultiTag (tag.min.js) já foi carregada no <head> do index.html,
-    // NÃO re-injetamos o mesmo script (re-injetar MultiTag duplica overlays e impede fechar o anúncio!)
-    if (!scriptUrl) return false;
-    const alreadyLoaded = Array.from(document.scripts).some(
-      (sc) => sc.src && sc.src.includes(scriptUrl) && (!zoneId || sc.getAttribute('data-zone') === String(zoneId))
-    );
-    if (alreadyLoaded) {
-      return true;
-    }
-
-    try {
-      const s = document.createElement('script');
-      s.id = `monetag-ad-script-${zoneId || adNumber}`;
-      s.async = true;
-      s.setAttribute('data-cfasync', 'false');
-      if (zoneId) {
-        s.setAttribute('data-zone', String(zoneId));
-      }
-      s.src = scriptUrl;
-      (document.body || document.head).appendChild(s);
-      this.injectedScripts.push(s);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // Executa a sequência obrigatória de 2 anúncios ao final da partida (Anúncio 1/2 -> Anúncio 2/2)
+  // Executa a sequência obrigatória de 2 anúncios ao final da partida (Anúncio 1/2 -> Anúncio 2/2 -> fecha)
   playMatchAdBreak(onAllAdsFinished) {
     if (!window.ADS_CONFIG || !window.ADS_CONFIG.enabled) {
       if (onAllAdsFinished) onAllAdsFinished(this.returnToMenuAfterAds);
@@ -122,13 +93,11 @@ class AdManager {
       };
     }
 
-    // Roda Anúncio 1 de 2 -> intervalo breve -> Anúncio 2 de 2 -> inicia próxima partida
+    // Anúncio 1 de 2 (300x250) -> Anúncio 2 de 2 (728x90) -> fecha automaticamente e inicia próxima partida
     this.runSingleAdStep(1, () => {
-      setTimeout(() => {
-        this.runSingleAdStep(2, () => {
-          this.finishAdBreak(onAllAdsFinished);
-        });
-      }, 450);
+      this.runSingleAdStep(2, () => {
+        this.finishAdBreak(onAllAdsFinished);
+      });
     });
   }
 
@@ -159,11 +128,8 @@ class AdManager {
       progressFillEl.style.width = '0%';
     }
 
-    this.renderAdContent(adNumber, slotContainer);
-
-    if (cfg.provider === 'monetag') {
-      this.triggerMonetagZone(adNumber);
-    }
+    // Renderiza o Banner oficial do Adsterra dentro de um iframe isolado (suporta document.write sem travar a página!)
+    this.renderAdsterraBanner(adNumber, slotContainer);
 
     let elapsed = 0;
     let lastTick = performance.now();
@@ -199,26 +165,74 @@ class AdManager {
     }, 80);
   }
 
-  renderAdContent(adNumber, container) {
+  renderAdsterraBanner(adNumber, container) {
     if (!container) return;
-    const mCfg = (window.ADS_CONFIG && window.ADS_CONFIG.monetag) || {};
-    const hasMonetagConfigured = !!(mCfg.zone1ScriptUrl || mCfg.directLinkUrl);
+    const adCfg =
+      window.ADS_CONFIG && window.ADS_CONFIG.adsterra
+        ? adNumber === 1
+          ? window.ADS_CONFIG.adsterra.ad1
+          : window.ADS_CONFIG.adsterra.ad2
+        : null;
 
-    const directLinkHtml = mCfg.directLinkUrl
-      ? `<a href="${mCfg.directLinkUrl}" target="_blank" rel="noopener noreferrer" class="sponsor-cta" style="background:#f59e0b;margin-top:8px;">🔗 APOIAR O JOGO (VER OFERTA)</a>`
-      : '';
+    container.innerHTML = '';
 
-    container.innerHTML = `
-      <div class="ad-clean-status">
-        <div>📺 Intervalo Comercial — Anúncio ${adNumber} de ${this.totalAds}</div>
-        <small>${
-          hasMonetagConfigured
-            ? 'O jogo está pausado durante o anúncio. A próxima partida começará automaticamente.'
-            : 'Aguardando configuração das Zonas do Monetag em js/ads.js. O jogo retomará automaticamente.'
-        }</small>
-        ${directLinkHtml}
-      </div>
-    `;
+    if (!adCfg || !adCfg.key || !adCfg.scriptUrl) {
+      container.innerHTML = `
+        <div class="ad-clean-status">
+          <div>📺 Intervalo Comercial — Anúncio ${adNumber} de ${this.totalAds}</div>
+          <small>O jogo está pausado e retomará automaticamente.</small>
+        </div>
+      `;
+      return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText =
+      'display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:260px;gap:8px;overflow:hidden;';
+
+    const frame = document.createElement('iframe');
+    frame.width = String(adCfg.width);
+    frame.height = String(adCfg.height);
+    frame.setAttribute('frameborder', '0');
+    frame.setAttribute('scrolling', 'no');
+    frame.style.cssText = `border:0;overflow:hidden;max-width:100%;width:${adCfg.width}px;height:${adCfg.height}px;background:rgba(15,23,42,0.55);border-radius:10px;`;
+
+    // Usa srcdoc para que o document.write() interno do Adsterra funcione em 100% das partidas,
+    // mantendo a origem do domínio principal e 100% contido dentro do nosso modal (zero pop-up).
+    frame.srcdoc = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<script>
+  atOptions = {
+    'key' : '${adCfg.key}',
+    'format' : 'iframe',
+    'height' : ${adCfg.height},
+    'width' : ${adCfg.width},
+    'params' : {}
+  };
+</script>
+<script src="${adCfg.scriptUrl}"></script>
+</body>
+</html>`;
+
+    wrapper.appendChild(frame);
+    container.appendChild(wrapper);
   }
 
   finishAdBreak(onAllAdsFinished) {
@@ -228,6 +242,9 @@ class AdManager {
     }
 
     this.isPlayingAdBreak = false;
+
+    const slotContainer = document.getElementById('intermission-stage-box');
+    if (slotContainer) slotContainer.innerHTML = '';
 
     const modal = document.getElementById('ad-break-modal');
     if (modal) modal.classList.add('hidden');

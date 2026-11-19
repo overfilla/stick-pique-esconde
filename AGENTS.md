@@ -31,8 +31,8 @@ Sempre que trabalhar neste repositório (`D:\Stick Pique Esconde`), leia primeir
    - Permitir **soltar/cancelar antecipadamente** `Dragon Flag (1)`, `Tinta Fresca 2D (2)` e `Espacate Alto (3)` a qualquer momento ao se mover (`WASD`/Setas), apertar `ESPAÇO` ou pressionar novamente a tecla da habilidade (`releaseHoldPose`).
    - Sempre rodar o servidor com `node server.js` (porta `8080`) para manter ativos os **4 Mini-Servidores WebSocket com preenchimento de IA (AI Backfill)**.
    - **Deploy na Nuvem (Render.com via GitHub):** O projeto está publicado em `https://stick-pique-esconde.onrender.com/` conectado a `https://github.com/overfilla/stick-pique-esconde.git` (`branch main`). Sempre que o usuário pedir para atualizar a versão online, basta fazer commit e executar `git push origin main` (o Render faz auto-deploy).
-7. **Monetização (Monetag — Zone 312297):**
-   - Ao final de toda partida (`endMatch`), exibir o placar por `3.5s` e entrar automaticamente no intervalo comercial de **2 anúncios (`Anúncio 1 de 2` ➔ `Anúncio 2 de 2`)** gerenciado por `js/ads.js` (`window.adManager`) integrado ao **Monetag** (`sw.js` na raiz + MultiTag `https://quge5.com/88/tag.min.js` `data-zone="312297"`), iniciando a próxima partida automaticamente para todos ao concluir o 2º anúncio.
+7. **Monetização (Adsterra — 2 Banners Limpos Controlados, ZERO Pop-up):**
+   - Ao final de toda partida (`endMatch`), exibir o placar por `3.5s` e entrar automaticamente no intervalo comercial de **2 anúncios sequenciais (`Anúncio 1 de 2` ➔ `Anúncio 2 de 2`)** gerenciado por `js/ads.js` (`window.adManager`) usando **Adsterra** (`Banner 300x250` e `Banner 728x90` em `iframe` `srcdoc` dentro de `#intermission-stage-box`), fechando o modal automaticamente ao fim do 2º anúncio e iniciando a próxima partida.
 
 
 

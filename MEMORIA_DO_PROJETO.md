@@ -131,9 +131,10 @@ Este documento registra toda a arquitetura, regras de jogo, mecânicas de furtiv
   - Link ao vivo: `https://stick-pique-esconde.onrender.com/`
   - Repositório GitHub: `https://github.com/overfilla/stick-pique-esconde.git` (`branch main`)
   - Configuração de serviço em `render.yaml` (`node server.js`, WebSocket + HTTP, auto-deploy ativo a cada `git push origin main`).
-- **Monetização (Monetag):**
-  - Verificado via `sw.js` na raiz do projeto.
-  - MultiTag oficial configurada no `<head>` do `index.html` e no `js/ads.js` (`https://quge5.com/88/tag.min.js`, `data-zone="312297"`).
+- **Monetização (Adsterra — Banners Limpos Controlados, ZERO Pop-up):**
+  - **Anúncio 1/2 (5s):** Banner `300x250` (`key: b2db0a752021cd91ed89ea4fe0f486ae`) renderizado dentro do modal `#ad-break-modal` via `iframe` `srcdoc`.
+  - **Anúncio 2/2 (5s):** Banner `728x90` (`key: 9c614d5786045bfaefeae3f138cfa684`) renderizado dentro do modal `#ad-break-modal` via `iframe` `srcdoc`.
+  - Ao final dos 2 anúncios, o modal fecha sozinho e inicia a próxima partida automaticamente.
 - **Localmente com Multiplayer (Mini-Servidores WebSocket + HTTP na porta 8080):**
   ```powershell
   node "D:\Stick Pique Esconde\server.js"
