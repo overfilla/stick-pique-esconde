@@ -1,0 +1,9 @@
+node_modules
+.git
+*.log
+*.zip
+*.jpg
+*.png
+MEMORIA_DO_PROJETO.md
+AGENTS.md
+

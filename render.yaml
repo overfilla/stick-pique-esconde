@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: stick-pique-esconde
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true

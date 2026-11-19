@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stick Pique-Esconde 3D: Salva Todos!</title>
+  <!-- Monetag Verification Meta Tag (cole o código do painel do Monetag aqui quando gerar) -->
+  <!-- <meta name="monetag" content="COLE_AQUI_SEU_CODIGO_MONETAG" /> -->
+  <link rel="stylesheet" href="style.css" />
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Floating 2D Labels / World Alerts Layer -->
+  <div id="world-labels"></div>
+
+  <!-- Top HUD -->
+  <header id="hud-top" class="hidden">
+    <div class="hud-team-panel" id="hiders-status-list">
+      <!-- Populated dynamically: 4 Hiders + 1 Seeker -->
+    </div>
+
+    <div class="hud-center-banner">
+      <div id="phase-badge" class="phase-badge countdown">CONTAGEM INICIAL</div>
+      <div id="timer-display" class="timer-display">02:30</div>
+      <div id="sub-announcement" class="sub-announcement">Esconda-se nas paredes antes do Pegador abrir os olhos!</div>
+    </div>
+
+    <div class="hud-controls-quick">
+      <button id="btn-toggle-sound" class="icon-btn" title="Alternar Som">🔊 Som</button>
+      <button id="btn-camera-mode" class="icon-btn" title="Alternar Ângulo da Câmera">🎥 Câmera</button>
+      <button id="btn-fullscreen" class="icon-btn" title="Alternar Tela Cheia (F11)">⛶ Tela Cheia</button>
+      <button id="btn-restart-menu" class="icon-btn" title="Voltar ao Menu">⚙️ Menu</button>
+    </div>
+  </header>
+
+  <!-- Center Screen Big Alert (Countdown / Salva Todos / Capturado) -->
+  <div id="big-alert" class="big-alert hidden"></div>
+
+  <!-- Bottom HUD -->
+  <footer id="hud-bottom" class="hidden">
+    <!-- Left: Posture & Stamina / Muscle Tremor Panel -->
+    <div class="posture-card">
+      <div class="posture-header">
+        <span class="posture-label">POSTURA ATUAL</span>
+        <span id="posture-state" class="posture-value state-normal">Em Pé (Visível)</span>
+      </div>
+
+      <div class="meter-group">
+        <div class="meter-title">
+          <span>Fôlego / Estabilidade Muscular</span>
+          <span id="stamina-pct">100%</span>
+        </div>
+        <div class="meter-track">
+          <div id="stamina-fill" class="meter-fill"></div>
+        </div>
+        <div id="tremor-warning" class="tremor-warning hidden">⚠️ MÚSCULO TREMENDO! Fazendo barulho!</div>
+      </div>
+
+      <div id="wall-hint" class="wall-hint">
+        💡 Pressione a <strong>Seta/WASD contra uma parede</strong> para se encolher nela!
+      </div>
+    </div>
+
+    <!-- Center: Abilities Bar with Cooldowns -->
+    <div class="abilities-bar" id="abilities-bar">
+      <!-- Populated dynamically based on role (Escondido vs Pegador) -->
+    </div>
+
+    <!-- Right: Pique Status & Radar Info -->
+    <div class="objective-card">
+      <div class="objective-title" id="objective-title">OBJETIVO: BATER PIQUE / SALVA TODOS</div>
+      <div class="objective-stats">
+        <div class="stat-pill">
+          <span class="stat-num" id="stat-free">4</span>
+          <span class="stat-lbl">Livres</span>
+        </div>
+        <div class="stat-pill jailed">
+          <span class="stat-num" id="stat-jailed">0</span>
+          <span class="stat-lbl">Na Prisão</span>
+        </div>
+        <div class="stat-pill saved">
+          <span class="stat-num" id="stat-saved">0</span>
+          <span class="stat-lbl">No Pique</span>
+        </div>
+      </div>
+      <div id="pique-action-hint" class="pique-action-hint">
+        🔒 <strong>O Pique</strong> abre nos <strong>30s finais</strong>! Para gritar <strong>"SALVA TODOS!"</strong>, vá até a <strong>Prisão ao Norte</strong> e aperte <kbd>ESPAÇO</kbd>.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Start / Role Selection Modal -->
+  <div id="menu-modal" class="modal-overlay">
+    <button id="btn-fullscreen-menu" class="icon-btn menu-fullscreen-btn" title="Alternar Tela Cheia (F11)">⛶ Tela Cheia</button>
+    <div class="modal-card">
+      <div class="modal-badge">ARENA 3D MULTIPLAYER</div>
+      <h1>Stick Pique-Esconde: <span>Salva Todos!</span></h1>
+      <p class="modal-subtitle">
+        Furtividade acrobática com bonecos palito. Use paredes, sombras e poses absurdas de calistenia para enganar o Pegador — ou cace todos antes que batam no Pique!
+      </p>
+
+      <div class="role-selector">
+        <div class="role-card selected" data-role="hider" id="select-role-hider">
+          <div class="role-icon">🤸</div>
+          <h3>Jogar como Escondido</h3>
+          <p>Encoste nas paredes (pressionando direção contra o muro), use a <strong>Dragon Flag</strong>, <strong>Tinta Fresca</strong> ou <strong>Espacate no Teto</strong> e salve seus amigos no Pique!</p>
+          <ul class="role-perks">
+            <li><strong>1: Dragon Flag</strong> (Prancha de calistenia na parede fora da visão baixa)</li>
+            <li><strong>2: Tinta Fresca 2D</strong> (Entalhe camuflado na pedra do muro)</li>
+            <li><strong>3: Espacate Alto</strong> (Espacate 180° do Van Damme exclusivo nos corredores)</li>
+            <li><strong>4: Estalo Distração</strong> (Joga pedrinha para atrair o Pegador)</li>
+          </ul>
+        </div>
+
+        <div class="role-card" data-role="seeker" id="select-role-seeker">
+          <div class="role-icon">🔦</div>
+          <h3>Jogar como Pegador</h3>
+          <p>Conte até 8 no Pique e saia à caça! Os escondidos ficam ocultos na Névoa de Guerra fora do seu feixe de luz. Cada captura reduz suas recargas em <strong>3.5s</strong>!</p>
+          <ul class="role-perks">
+            <li><strong>1: Acender a Luz 360°</strong> (Revela sombras e Tinta 2D ao redor)</li>
+            <li><strong>2: Olhar para Cima</strong> (Flagra Dragon Flag e Espacate Alto)</li>
+            <li><strong>3: Radar Cardíaco</strong> (Detecta passos e músculos tremendo)</li>
+            <li><strong>4: Bote Rápido</strong> (Avanço veloz +50% para capturar)</li>
+            <li><strong>5: Curto-Circuito ⚡</strong> (Bloqueia o Salva-Todos por 15s • 1x na partida)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mp-server-section">
+        <div class="mp-header-row">
+          <div class="mp-name-box">
+            <label for="player-nickname">Seu Nome:</label>
+            <input type="text" id="player-nickname" maxlength="16" placeholder="Ex: Sombra" value="Viajante" />
+          </div>
+          <div id="mp-conn-status" class="mp-conn-status offline">⚪ Conectando aos Mini-Servidores...</div>
+        </div>
+
+        <div class="mp-servers-title">ESCOLHA UM MINI-SERVIDOR (VAGAS RESTANTES PREENCHIDAS COM IA):</div>
+        <div id="mp-servers-grid" class="mp-servers-grid">
+          <!-- Populated dynamically with the 4 Mini-Servers + Solo Offline option -->
+        </div>
+      </div>
+
+      <div class="controls-summary">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou <kbd>Setas</kbd> Mover / Encolher / Soltar Pose</div>
+        <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> <kbd>5</kbd> Habilidades Acrobáticas / Caça</div>
+        <div><kbd>ESPAÇO</kbd> Bater Pique / Salva Todos / Soltar Pose</div>
+        <div><kbd>Scroll</kbd> Zoom da Câmera 3D</div>
+      </div>
+
+      <button id="btn-start-game" class="primary-cta">ENTRAR NA PARTIDA</button>
+    </div>
+  </div>
+
+  <!-- End Game Modal -->
+  <div id="gameover-modal" class="modal-overlay hidden">
+    <div class="modal-card gameover-card">
+      <div id="gameover-badge" class="modal-badge">FIM DE PARTIDA</div>
+      <h2 id="gameover-title">Vitória dos Escondidos!</h2>
+      <p id="gameover-desc" class="modal-subtitle"></p>
+
+      <div class="match-stats-grid" id="match-stats-grid">
+        <!-- Populated at end of match -->
+      </div>
+
+      <div id="gameover-ad-countdown" class="gameover-ad-countdown">
+        📺 Intervalo comercial (2 anúncios) em 3s...
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-play-again" class="primary-cta">Avançar p/ Próxima Partida (2 Ads)</button>
+        <button id="btn-back-menu" class="secondary-cta">Trocar Papel / Menu (Após Ads)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ad Break Modal (2 Sequential Ads after every match, Online & Offline) -->
+  <div id="ad-break-modal" class="modal-overlay hidden">
+    <div class="modal-card ad-break-card">
+      <div class="ad-header-row">
+        <div id="ad-step-badge" class="modal-badge ad-badge">📺 INTERVALO COMERCIAL • ANÚNCIO 1 DE 2</div>
+        <div class="ad-steps-pills">
+          <span id="ad-pill-1" class="ad-step-pill active">▶ Anúncio 1/2</span>
+          <span id="ad-pill-2" class="ad-step-pill">▶ Anúncio 2/2</span>
+          <span class="ad-step-pill">🎮 Próximo Jogo</span>
+        </div>
+      </div>
+
+      <div id="intermission-stage-box" class="intermission-stage-box">
+        <!-- Populated dynamically by AdManager (js/ads.js) -->
+      </div>
+
+      <div class="ad-progress-wrapper">
+        <div class="ad-progress-bar">
+          <div id="ad-progress-fill" class="ad-progress-fill"></div>
+        </div>
+        <div id="ad-timer-text" class="ad-timer-text">Anúncio 1/2 • Próximo anúncio em 5s...</div>
+      </div>
+
+      <button id="btn-ad-return-menu" class="secondary-cta ad-menu-toggle-btn">
+        🏠 Ir para o Menu após os anúncios: NÃO (Iniciar Próxima Partida)
+      </button>
+    </div>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/ads.js"></script>
+  <script src="js/stickman.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,13 @@
+{
+  "name": "stick-pique-esconde-3d",
+  "version": "1.0.0",
+  "description": "Stick Pique-Esconde 3D: Salva Todos! - Multiplayer Mini-Servers com IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
