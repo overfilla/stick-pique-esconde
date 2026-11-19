@@ -44,8 +44,8 @@ class AdManager {
     return !!this.isPlayingAdBreak;
   }
 
-  // Injeta dinamicamente o script da Zona do Monetag no momento do intervalo comercial
-  // (assim os anúncios não interrompem a gameplay durante a partida!)
+  // Injeta o script de Zona do Monetag apenas se ainda NÃO estiver carregado na página
+  // (evita empilhar múltiplas instâncias da MultiTag que travam o botão de fechar!)
   triggerMonetagZone(adNumber) {
     const cfg = window.ADS_CONFIG && window.ADS_CONFIG.monetag;
     if (!cfg) return false;
@@ -62,23 +62,24 @@ class AdManager {
       } catch (e) {}
     }
 
-    // 2. Caso contrário, injeta a tag oficial do Monetag (<script src="..." data-zone="...">)
+    // 2. Se a MultiTag (tag.min.js) já foi carregada no <head> do index.html,
+    // NÃO re-injetamos o mesmo script (re-injetar MultiTag duplica overlays e impede fechar o anúncio!)
     if (!scriptUrl) return false;
+    const alreadyLoaded = Array.from(document.scripts).some(
+      (sc) => sc.src && sc.src.includes(scriptUrl) && (!zoneId || sc.getAttribute('data-zone') === String(zoneId))
+    );
+    if (alreadyLoaded) {
+      return true;
+    }
 
     try {
-      // Remove script anterior do mesmo slot para forçar nova requisição no Anúncio 2/2
-      const prevId = `monetag-ad-script-${adNumber}`;
-      const existing = document.getElementById(prevId);
-      if (existing) existing.remove();
-
       const s = document.createElement('script');
-      s.id = prevId;
+      s.id = `monetag-ad-script-${zoneId || adNumber}`;
       s.async = true;
       s.setAttribute('data-cfasync', 'false');
       if (zoneId) {
         s.setAttribute('data-zone', String(zoneId));
       }
-      // Cache-buster leve apenas se for re-disparo de tag sem parâmetro conflitante
       s.src = scriptUrl;
       (document.body || document.head).appendChild(s);
       this.injectedScripts.push(s);
