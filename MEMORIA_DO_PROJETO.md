@@ -45,16 +45,18 @@ Este documento registra toda a arquitetura, regras de jogo, mecânicas de furtiv
 3. **Ato 2 — Fase de Resgate (Dos 30s aos 60s: `01:00` até `00:30`):**
    - O **Botão Salva-Todos** na Prisão ao Norte `(0, -16.8)` é **LIBERADO** (luz verde).
    - Escondidos livres podem ir até a Prisão e apertar `ESPAÇO` para libertar todos os aliados presos com bônus de velocidade, deixando um **rastro de pegadas luminosas (`👣 RASTRO DE FUGA`) por 3 segundos** após o resgate.
+   - **Intervalo de Recarga do Salva-Todos:** Após cada resgate, o botão entra em recarga global de **10 segundos** (`salvaTodosCooldown = 10.0`), impedindo resgates consecutivos imediatos (sincronizado via `world_sync` no multiplayer).
    - O Pegador pode usar sua habilidade única **`5: Curto-Circuito`** para bloquear o botão da Prisão por 15 segundos.
-4. **Ato 3 — Clímax Final (Últimos 30s: `00:30` até `00:00`):**
+4. **Ato 3 — Clímax Final (Últimos 30s: `00:30` até `00:00`) e Condição de Vitória:**
    - **O Pique Central `(0, 0)` ABRE!** A cúpula azul desaparece e o cristal fica dourado.
-   - Qualquer Escondido livre que chegar ao Pique e apertar `ESPAÇO` bate Pique e garante a vitória da equipe!
+   - **Vitória dos Escondidos (Derrota do Pegador):** Acontece se **pelo menos 3 dos 4 Escondidos** baterem no Pique (`savedCount >= 3`) **ou** se o tempo de 90s acabar com pelo menos 1 Escondido ainda solto na arena (`freeCount > 0`). Apenas 1 ou 2 jogadores no Pique não encerram a partida.
+   - **Vitória do Pegador:** Acontece se o Pegador capturar todos os Escondidos soltos (`freeCount === 0`) antes de 3 chegarem ao Pique (`savedCount < 3`).
 
 ### Sistema Anti-"Guarda-Caixão" (`updateAntiCamp`)
 - Nem o jogador nem a IA no papel de Pegador podem "acampar" a menos de `6.5m` do **Pique Aberto** ou da **Prisão Ativa** por mais de **4 segundos** sem estar perseguindo um Escondido visível:
   - **Na Prisão:** Se acampar por 4s, as grades se abrem sozinhas (*Salva-Todos Automático*) e o Pegador é repelido e atordoado por `2.6s`.
   - **No Pique Aberto:** Se acampar por 4s, o Pegador sofre choque/atordoamento de `2.6s` e é repelido para longe do centro.
-  - **Exceção Importante:** A regra de Guardar Caixão na Prisão fica **suspensa** nos primeiros 30s da partida (enquanto o Salva-Todos ainda não abriu) e durante os 15s da habilidade **Curto-Circuito**.
+  - **Exceção Importante:** A regra de Guardar Caixão na Prisão fica **suspensa** nos primeiros 30s da partida (enquanto o Salva-Todos ainda não abriu), durante os 15s da habilidade **Curto-Circuito** e durante a recarga de **10 segundos** do **Salva-Todos**.
 
 ---
 
@@ -160,14 +162,17 @@ Este documento registra toda a arquitetura, regras de jogo, mecânicas de furtiv
 
 ---
 
-## 9. Histórico da Migração para Render.com + Monetag (Concluída em 18/11/2026)
+## 9. Histórico da Migração para Render.com + Adsterra + Novas Regras (Concluído em 18/11/2026)
 
-1. ✅ **Alternativa ao GameMonetize para jogo feito por IA:**
-   - Migrado para **Monetag** (`sw.js` verificado + MultiTag `data-zone="312297"` integrada em `index.html` e `js/ads.js`), removendo completamente os scripts da GameMonetize.
-2. ✅ **Hospedagem Gratuita sem Cartão (Render.com):**
+1. ✅ **Hospedagem Gratuita sem Cartão (Render.com):**
    - Migrado da Fly.io para o **Render.com** (`https://stick-pique-esconde.onrender.com/`) com deploy automático via GitHub (`https://github.com/overfilla/stick-pique-esconde.git`).
-3. ✅ **Ajustes Gerais:**
-   - WebSocket em `js/game.js` agora usa `${wsProto}//${window.location.host}/ws` dinamicamente, `server.js` serve `.txt` e `sw.js`, selo do menu atualizado para `ARENA 3D MULTIPLAYER` e loop de segundo plano Web Worker ativo no modo Online.
+2. ✅ **Monetização Limpa (Adsterra — ZERO Pop-up) + Detecção de AdBlock:**
+   - Substituída a GameMonetize (recusada por IA) e a MultiTag do Monetag (intrusiva) por **2 Banners limpos do Adsterra** (`300x250` e `728x90`) renderizados em `iframe` `srcdoc` dentro do modal `#ad-break-modal` (`Anúncio 1/2` ➔ `Anúncio 2/2` ➔ fecha sozinho ➔ próxima partida).
+   - Adicionada **tela de detecção de AdBlock** (`#adblock-modal` em `index.html`, `style.css` e `js/ads.js`) com verificação dupla (elemento isca DOM + `fetch` `no-cors` no script do Adsterra) e botão de reverificação instantânea.
+3. ✅ **Ajustes Gerais & Novas Regras de Gameplay:**
+   - WebSocket em `js/game.js` dinâmico (`${wsProto}//${window.location.host}/ws`), Web Worker de segundo plano mantendo o Modo Online rodando sem pausar em `Alt + Tab` / troca de guia, selo do menu atualizado para `ARENA 3D MULTIPLAYER`.
+   - Nova condição de vitória: Pegador perde se **pelo menos 3 dos 4 Escondidos** baterem no Pique **ou** se o tempo acabar com jogadores ainda soltos (`freeCount > 0`).
+   - Novo intervalo mínimo de **10 segundos** (`salvaTodosCooldown = 10.0`) entre cada acionamento do **Salva-Todos**.
 
 
 
